@@ -1,3 +1,4 @@
+#import necessary libraries for data manipulation and figure display
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -10,11 +11,14 @@ import os
 from matplotlib.collections import LineCollection
 from matplotlib.colors import ListedColormap, BoundaryNorm
 
-fig_width = 14  # Figure width in inches
-fig_height = 6  # Figure height in inches
-inset_ratio = 0.8  # The proportion of the figure to use for the image
+# this code creates two visuals, one is a graph of the entire swing duration. The other is a graph for every data point next to the picture the camera captured
+# for simplicity the entire swing will be referenced as (ES) and each data point as (DP)
 
-# Function to split video into frames
+fig_width = 14  # Figure width in inches (DP)
+fig_height = 6  # Figure height in inches (DP)
+inset_ratio = 0.8  # The proportion of the figure to use for the image altering this changes the white space to the right of the plots (DP)
+
+# Function to split video into frames (DP)
 def split_video_to_frames(input_video_path, output_folder_path, df):
     # Open the video file
     video_capture = cv2.VideoCapture(input_video_path)
@@ -48,22 +52,25 @@ def split_video_to_frames(input_video_path, output_folder_path, df):
     # Release the VideoCapture object
     video_capture.release()
 
-# Sample DataFrame (replace this with your DataFrame)
+# insert the load cell data
 df = pd.read_csv(r'/home/labuser/Documents/ADS/load_cell_weights.csv')
+# make the length of the df divisible by 4 by removing end datapoints
 remainder = len(df) % 4
 if remainder != 0:
     df = df[:-remainder]
 
-# Calculate the average of every 5 rows for each column
+# Calculate the average of every 5 rows for each column to condense data
 df = df.groupby(df.index // 4).mean()
+# calculate the center of mass in the x and y direction
 row_sums = df.sum(axis=1)
 df['Row_Sums'] = row_sums
 X_1 = (df.iloc[:, 0] * -8.25 + df.iloc[:, 1] * -8.25 + df.iloc[:, 2] * 8.25 + df.iloc[:, 3] * 8.25) / df.iloc[:, 4]
 Y_1 = (df.iloc[:, 0] * 4.5 + df.iloc[:, 1] * -4.5 + df.iloc[:, 2] * 4.5 + df.iloc[:, 3] * -4.5) / df.iloc[:, 4]
 
+# this is the location of the video recorded from finalmain2.py
 input_video_path = r'/home/labuser/Documents/ADS/output.mp4'
 
-# Output folder path to save frames
+# Video is split into individual frames and stored in this location
 output_folder_path = r'/home/labuser/Documents/ADS/Pictures'
 
 # Split the video into frames
@@ -75,23 +82,25 @@ df['y'] = Y_1
 
 df.to_csv('/home/labuser/Documents/ADS/COM.csv', index=False)
 
+# make the plot for the graph (ES)
 points = np.array([df['x'], df['y']]).T.reshape(-1, 1, 2)
 segments = np.concatenate([points[:-1], points[1:]], axis=1)
 
-# Create a LineCollection
+# Create a LineCollection (ES)
 lc = LineCollection(segments, cmap='viridis', norm=plt.Normalize(0, 10))
 
-# Set the values used for colormapping
+# Set the values used for colormapping (ES)
 lc.set_array(np.linspace(0, 10, len(df['x']) - 1))
 lc.set_linewidth(2)
 
 fig, ax = plt.subplots()
 ax.add_collection(lc)
 ax.autoscale()
+# set axis to the dimensions of the board (ES)
 ax.set_xlim(-8.25, 8.25)
 ax.set_ylim(-4.5, 4.5)
 
-# Creating a colorbar as a legend
+# Creating a colorbar as a legend for representation of time (ES)
 cbar = plt.colorbar(lc, orientation='vertical')
 cbar.set_label('Time Progression')
 
@@ -100,7 +109,7 @@ plt.xlabel('X Axis')
 plt.ylabel('Y Axis')
 plt.show()
 
-# Function to plot a single data point
+# Function to plot a single data point (DP)
 def plot_point_with_image(ax, x, y, image_path):
     ax.scatter(x, y)
     ax.set_title(f'Point ({x}, {y})')
@@ -109,7 +118,7 @@ def plot_point_with_image(ax, x, y, image_path):
     ax.set_xlim(-8.25, 8.25)
     ax.set_ylim(-4.5, 4.5)
 
-    # Load and display the image
+    # Load and display the image from video frames
     img = plt.imread(image_path)
 
     inset_ratio_width = 0.4  # You can increase this if you want the image to be wider
@@ -121,7 +130,7 @@ def plot_point_with_image(ax, x, y, image_path):
     ax_image.imshow(img)
     ax_image.axis('off')
 
-# Function to create and display plots
+# Function to create and display plots (DP)
 def create_plots():
     # Create a Tkinter window with adjusted width
     root = tk.Tk()
