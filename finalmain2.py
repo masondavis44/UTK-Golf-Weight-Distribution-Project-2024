@@ -29,6 +29,7 @@ def record_video(duration_1):
                 frames.append(frame)
                 
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        # save the video
         video_writer = cv2.VideoWriter('output.mp4', fourcc, expected_fps, (frames[0].shape[1], frames[0].shape[0]))
         
         for frame in frames:
@@ -38,7 +39,9 @@ def record_video(duration_1):
 
 # Function to collect and save load cell data
 def collect_load_cell_data(duration):
+    # the camera takes longer to start recording than the load cells, so we make the data collection wait so they begin at the same time.
     time.sleep(2.5)
+    # the calibration factors are the slope and intercept to convert raw ADC readings to weight
     calibration_factors = {
         "Differential 0-1": (0.005255402508804553, -32.77118234095868),
         "Differential 2-3": (0.0064694839574558245, -35.8680578828282),
@@ -60,13 +63,14 @@ def collect_load_cell_data(duration):
     voltages = newmain3.read_voltages(duration)
     weights_dict = convert_voltages_to_weights(voltages)
     df_weights = pd.DataFrame.from_dict(weights_dict, orient='index').transpose()
+    # save the loadcell data 
     df_weights.to_csv('load_cell_weights.csv', index=False)
     print("Weights saved to 'load_cell_weights.csv'.")
 
 # Main function to run both tasks concurrently
 def main():
-    duration = 5  # Duration for both tasks in seconds
-    duration_1 = 5.5
+    duration = 5  # Duration for load cells in seconds
+    duration_1 = 5.5 # Duration for camera in seconds
     # Create threads for video recording and load cell data collection
     video_thread = threading.Thread(target=record_video, args=(duration,))
     data_thread = threading.Thread(target=collect_load_cell_data, args=(duration,))
